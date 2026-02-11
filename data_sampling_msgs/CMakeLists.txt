@@ -11,7 +11,10 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
+<<<<<<< HEAD
   "msg/SensorStatus.msg"
+=======
+>>>>>>> 0ae66ec (하트비트 추가, 하트비트용 메시지 추가)
   "msg/SamplingStatus.msg"
   DEPENDENCIES builtin_interfaces
 )

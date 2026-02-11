@@ -58,7 +58,6 @@ class SamplingStatusManager:
 class SamplingNode(Node):
     def __init__(self):
         super().__init__('data_sampling')
-
         self.status = {
             'gps': {
                 'topic' : '',
@@ -189,7 +188,6 @@ class SamplingNode(Node):
             if t in topic_names:
                 self.get_logger().info(f"GPS topic connected: {t}")
                 self.status['gps']['topic'] = t
-
                 self.gps_subscription = self.create_subscription(
                 NavSatFix,
                 t,
@@ -218,7 +216,7 @@ class SamplingNode(Node):
         if name == 'gps':
             self.status['gps']['state'] = 'connect'
             self.status['gps']['last_publish'] = now
-
+    
             distance_threshold = 0.00001
 
             if self.last_lat is None or self.last_lon is None:
@@ -242,7 +240,7 @@ class SamplingNode(Node):
         if name == 'pcd':
             self.status['pcd']['state'] = 'connect'
             self.status['pcd']['last_publish'] = now
-            
+
             points = np.array([
                 [p[0], p[1], p[2]]
                 for p in point_cloud2.read_points(
