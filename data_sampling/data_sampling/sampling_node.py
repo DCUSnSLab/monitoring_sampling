@@ -35,7 +35,7 @@ class SamplingStatusManager:
             'gps': 'gps',
             'pcd': 'pcd',
             'camera': 'camera',
-            'vehicle_status': 'vehicle'
+            'vehicle_status': 'vehicle_status'
         }
 
         for value, field in mapping.items():
@@ -43,13 +43,25 @@ class SamplingStatusManager:
             sensor_status = self.node.status[value]
 
             sensor_msg.topic = sensor_status.get('topic', "")
-            sensor_msg.state = sensor_status['state']
 
             last_time = sensor_status['last_publish']
+
             if last_time:
+                age = (now - last_time).nanoseconds / 1e9
                 sensor_msg.last_publish = last_time.to_msg()
-                sensor_msg.age = (now - last_time).nanoseconds / 1e9
+                sensor_msg.age = age
+
+                timeout = self.node.periods[value] * 3
+
+                if age <= timeout:
+                    sensor_msg.state = "connected"
+                elif age <= timeout * 2:
+                    sensor_msg.state = "slow"
+                else:
+                    sensor_msg.state = "lost"
+
             else:
+                sensor_msg.state = "no_data"
                 sensor_msg.age = -1.0
             
         self.status_pub.publish(msg)
@@ -205,6 +217,7 @@ class SamplingNode(Node):
     # sensor_data_send
     def sensor_callback(self, name, msg, pub):
         now = self.get_clock().now()
+        self.status[name]['last_publish'] = now
         period = Duration(seconds=self.periods[name])
 
         if self.last_sent_time[name] is None:
@@ -214,9 +227,6 @@ class SamplingNode(Node):
                 return
     
         if name == 'gps':
-            self.status['gps']['state'] = 'connect'
-            self.status['gps']['last_publish'] = now
-    
             distance_threshold = 0.00001
 
             if self.last_lat is None or self.last_lon is None:
@@ -238,9 +248,6 @@ class SamplingNode(Node):
             self.last_lon = msg.longitude
 
         if name == 'pcd':
-            self.status['pcd']['state'] = 'connect'
-            self.status['pcd']['last_publish'] = now
-
             points = np.array([
                 [p[0], p[1], p[2]]
                 for p in point_cloud2.read_points(
@@ -270,14 +277,6 @@ class SamplingNode(Node):
                 header=msg.header,
                 points=points
             )
-
-        if name == 'camera':
-            self.status['camera']['state'] = 'connect'
-            self.status['camera']['last_publish'] = now
-        
-        if name == 'vehicle_status':
-            self.status['vehicle_status']['state'] = 'connect'
-            self.status['vehicle_status']['last_publish'] = now
 
         pub.publish(msg)
         self.last_sent_time[name] = now
