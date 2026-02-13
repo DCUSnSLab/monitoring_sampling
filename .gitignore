@@ -18,4 +18,8 @@ __pycache__/
 Thumbs.db
 
 # Colcon
+<<<<<<< HEAD
 *.egg-info/
+=======
+*.egg-info/
+>>>>>>> b77a1d1 (하트비트 수정)
